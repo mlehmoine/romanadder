@@ -32,6 +32,7 @@ public class TestRomanAdder {
 		vectors.add( new RomanTestVector("MCMLIV" , "C", "MMLIV" ));
 		vectors.add( new RomanTestVector("MCMLIV" , "CC", "MMCLIV" ));
 		vectors.add( new RomanTestVector("MCMLIV" , "CVC", "MMCIL" ));
+        vectors.add( new RomanTestVector("IV" , "IV", "VIII" ));
 		
 		for( RomanTestVector vector : vectors ) {
 			
