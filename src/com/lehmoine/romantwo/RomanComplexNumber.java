@@ -3,9 +3,7 @@ package com.lehmoine.romantwo;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
 
 /* General notes on Roman Numbers
  * 
@@ -33,67 +31,7 @@ public class RomanComplexNumber {
 	private List<Character> addList = new ArrayList<Character>();
 	private List<Character> subtractList = new ArrayList<Character>();
 	private String combinedValue;
-	
-	/*
-	 * Static Elements
-	 */
-	
-	// I use these static maps to keep track of the relative values for roman digits. 
-	
-	// value of each digit
-	static final HashMap<Character, Integer> valueMap = new HashMap<Character, Integer>();
-	// The next most valuable digit relative to another
-	static final HashMap<Character, Character> nextBiggerCharMap = new HashMap<Character, Character>();
-    static final HashMap<Character, Character> nextSmallerCharMap = new HashMap<Character, Character>();
-
-	static {
-		// I use this static data to make decision about roman digits.
-		// It's constant for all instances of Roman Digits.  Just lookup information.
 		
-		
-		//
-		// Initialize the value map.
-		//
-		valueMap.put( new Character('I'), new Integer(1) );
-		valueMap.put( new Character('V'), new Integer(5) );
-		valueMap.put( new Character('X'), new Integer(10) );
-		valueMap.put( new Character('L'), new Integer(50) );
-		valueMap.put( new Character('C'), new Integer(100) );
-		valueMap.put( new Character('D'), new Integer(500) );
-		valueMap.put( new Character('M'), new Integer(1000) );
-
-		// Look at the value of each digit.
-		// Sort them.
-		// Find the next most valuable digit for each digit.
-		Set<Character> keys = valueMap.keySet();
-		ArrayList<Character> keyList = new ArrayList<Character>(keys);
-		Collections.sort(keyList, new Comparator<Character>(){
-
-			@Override
-			public int compare(Character o1, Character o2) {
-				return getRomanValue(o1) - getRomanValue(o2);
-			}});
-
-		Character lastCharacter = null;
-		for( Character key : keyList ) {
-			if( lastCharacter != null ) {
-				nextBiggerCharMap.put( lastCharacter, key);
-			}
-
-			lastCharacter = key;
-		}
-		
-		Collections.reverse(keyList);
-		lastCharacter = null;
-	    for( Character key : keyList ) {
-	        if( lastCharacter != null ) {
-	            nextSmallerCharMap.put( lastCharacter, key);
-	        }
-
-	        lastCharacter = key;
-	    }
-	}
-	
 	/*
 	 * Given a roman number as an ascii string, create an
 	 * equivalent RomanComplexNumber
@@ -104,7 +42,7 @@ public class RomanComplexNumber {
 			throw new RuntimeException("invalid roman number: empty string");
 		}		
 
-		if( ! validate(romanNumber) ) {
+		if( ! RomanUtil.validate(romanNumber) ) {
 			throw new RuntimeException("invalid roman number: bad format: " +  romanNumber);
 		}
 		
@@ -123,7 +61,7 @@ public class RomanComplexNumber {
 			Character thisChar = characters[index];
 			Character nextChar = characters[index+1];
 			
-			if( getRomanValue(thisChar) < getRomanValue(nextChar) ) {
+			if( RomanUtil.getRomanValue(thisChar) < RomanUtil.getRomanValue(nextChar) ) {
 				// The number on the left is smaller than the one on the right.
 				// This indicates subtraction.
 				subtractList.add(thisChar);
@@ -208,7 +146,7 @@ public class RomanComplexNumber {
 				// Look at the relative values of the two characters.
 				// If the subtraction character if less than the the
 				// addition character, 
-				if( getRomanValue(subChar) < getRomanValue(addChar) ) {
+				if( RomanUtil.getRomanValue(subChar) < RomanUtil.getRomanValue(addChar) ) {
 					// Insert the subchar in the position onces held by the
 					// add char.  The add char gets moved to the right.
 					temp.add( tempOffset, subChar);
@@ -285,11 +223,13 @@ public class RomanComplexNumber {
         
         // Do we have an intersection between the add & subtract lists?
         // Yes:  
-        if( subtractList.size() > 0 && addList.size() < subtractList.size() ) {
+        if( subtractList.size() > 0
+                && (addList.size() < subtractList.size()
+                        || (addList.size() <= subtractList.size() && !containsAny(addList,subtractList) )  ) ) {
             
-            if( containsAny(addList, subtractList) ) {
-                return false;
-            }
+//            if( containsAny(addList, subtractList) ) {
+//                return false;
+//            }
             
                 /* ! containsAny( addList, subtractList) ||  addList.size() < subtractList.size() */ 
             // There is no intersection between the two lists...
@@ -311,8 +251,8 @@ public class RomanComplexNumber {
             for( List<Character> thisList : lists ) {
                 Character thisChar = thisList.get(0);
                 
-                if( getRomanValue(thisChar) > getRomanValue(biggestSubractCharacter)) {
-                    int newCharCount = getRomanValue(thisChar) / getRomanValue(biggestSubractCharacter);
+                if( RomanUtil.getRomanValue(thisChar) > RomanUtil.getRomanValue(biggestSubractCharacter)) {
+                    int newCharCount = RomanUtil.getRomanValue(thisChar) / RomanUtil.getRomanValue(biggestSubractCharacter);
                     thisList.remove(0);
                     thisList.addAll(Collections.nCopies(newCharCount, biggestSubractCharacter));
                     
@@ -369,8 +309,8 @@ public class RomanComplexNumber {
 			Character charOne = addList.get(offsetOne);
 			Character charTwo = subtractList.get(offsetTwo);
 			
-			int valueOne = getRomanValue(charOne);
-			int valueTwo = getRomanValue(charTwo);
+			int valueOne = RomanUtil.getRomanValue(charOne);
+			int valueTwo = RomanUtil.getRomanValue(charTwo);
 			
 			if( valueOne == valueTwo ) {
 				// These are equal.
@@ -420,7 +360,7 @@ public class RomanComplexNumber {
 		// For each sublist...
 		for( List<Character> thisList : lists ) {
 			Character thisCharacter = thisList.get(0);
-			Character nextCharacter = getNextRomanCharacter(thisCharacter);
+			Character nextCharacter = RomanUtil.getNextBiggerCharacter(thisCharacter);
 			int maxSpan = getMaxRunForCharacter(thisCharacter);
 			
 			int spanLength = thisList.size();
@@ -475,11 +415,11 @@ public class RomanComplexNumber {
 	 * biggest roman number digit
 	 */
 	private static int getMaxRunForCharacter(Character runCharacter) {
-		int runCharValue = getRomanValue(runCharacter);
-		Character nextChar = getNextRomanCharacter(runCharacter);
+		int runCharValue = RomanUtil.getRomanValue(runCharacter);
+		Character nextChar = RomanUtil.getNextBiggerCharacter(runCharacter);
 
 		if( nextChar != null ) {
-			int nextCharValue = getRomanValue(nextChar);
+			int nextCharValue = RomanUtil.getRomanValue(nextChar);
 			
 			return nextCharValue / runCharValue;			
 		}
@@ -488,21 +428,6 @@ public class RomanComplexNumber {
 		}
 	}
 
-	/* 
-	 * For the given character, return the next largest roman
-	 * numeral
-	 */
-	private static Character getNextRomanCharacter(Character thisChar) {
-		return nextBiggerCharMap.get(thisChar);
-	}	
-
-	/*
-	 * Given a roman numeral return its value.
-	 */
-	static protected int getRomanValue( char character ) {
-		return valueMap.get(character);
-	}
-	
 	/*
 	 * Sort a list of roman numerals 
 	 */
@@ -511,33 +436,11 @@ public class RomanComplexNumber {
 
 			@Override
 			public int compare(Character o1, Character o2) {
-				return getRomanValue(o2) - getRomanValue(o1);
+				return RomanUtil.getRomanValue(o2) - RomanUtil.getRomanValue(o1);
 			}
 		});
 	}
 
-	/*
-	 * Try to figure out if the roman numeral is valid
-	 */
-	protected boolean validate(String romanNumber) {
-		
-		// Check to see if there are any invalid characters in the string.
-		if( !romanNumber.matches("[IVXLCDM]+") ) {
-			return false;
-		}
-
-		// Look for sequences of digits that are too long.
-		// D L V: cannot be repeated
-		// I X C M: No more than 3 in a row
-		
-		if( romanNumber.matches(".*(DD|LL|VV|IIII|XXXX|CCCC|MMMM).*") ) {
-			return false;
-		}
-		
-		return true;
-	}
-	
-	
 	public void setEqual( RomanComplexNumber other ) {
 	    this.addList.clear();
 	    this.subtractList.clear();

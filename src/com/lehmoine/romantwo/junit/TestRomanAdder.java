@@ -26,14 +26,14 @@ public class TestRomanAdder {
 		List<RomanTestVector> vectors = new ArrayList<RomanTestVector>();
 		
 		vectors.add( new RomanTestVector("LXLVIII" , "I", "IC" ));
-		vectors.add( new RomanTestVector("IC" , "I", "C" ));
-		vectors.add( new RomanTestVector("MIM" , "I", "MM" ));
-		vectors.add( new RomanTestVector("MCMLIV" , "V", "MCMLIX" ));
-		vectors.add( new RomanTestVector("MCMLIV" , "C", "MMLIV" ));
-		vectors.add( new RomanTestVector("MCMLIV" , "CC", "MMCLIV" ));
-		vectors.add( new RomanTestVector("MCMLIV" , "CVC", "MMCIL" ));
-        vectors.add( new RomanTestVector("IV" , "IV", "VIII" ));
-        vectors.add( new RomanTestVector("IX" , "IX", "XVIII" ));
+//		vectors.add( new RomanTestVector("IC" , "I", "C" ));
+//		vectors.add( new RomanTestVector("MIM" , "I", "MM" ));
+//		vectors.add( new RomanTestVector("MCMLIV" , "V", "MCMLIX" ));
+//		vectors.add( new RomanTestVector("MCMLIV" , "C", "MMLIV" ));
+//		vectors.add( new RomanTestVector("MCMLIV" , "CC", "MMCLIV" ));
+//		vectors.add( new RomanTestVector("MCMLIV" , "CVC", "MMCIL" ));
+//        vectors.add( new RomanTestVector("IV" , "IV", "VIII" ));
+//        vectors.add( new RomanTestVector("IX" , "IX", "XVIII" ));
 
         
 		for( RomanTestVector vector : vectors ) {
