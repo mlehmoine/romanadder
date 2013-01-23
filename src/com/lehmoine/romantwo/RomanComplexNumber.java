@@ -32,7 +32,8 @@ public class RomanComplexNumber {
 	// add and subtract characters.
 	private List<Character> addList = new ArrayList<Character>();
 	private List<Character> subtractList = new ArrayList<Character>();
-
+	private String combinedValue;
+	
 	/*
 	 * Static Elements
 	 */
@@ -42,7 +43,8 @@ public class RomanComplexNumber {
 	// value of each digit
 	static final HashMap<Character, Integer> valueMap = new HashMap<Character, Integer>();
 	// The next most valuable digit relative to another
-	static final HashMap<Character, Character> nextCharMap = new HashMap<Character, Character>();
+	static final HashMap<Character, Character> nextBiggerCharMap = new HashMap<Character, Character>();
+    static final HashMap<Character, Character> nextSmallerCharMap = new HashMap<Character, Character>();
 
 	static {
 		// I use this static data to make decision about roman digits.
@@ -75,11 +77,21 @@ public class RomanComplexNumber {
 		Character lastCharacter = null;
 		for( Character key : keyList ) {
 			if( lastCharacter != null ) {
-				nextCharMap.put( lastCharacter, key);
+				nextBiggerCharMap.put( lastCharacter, key);
 			}
 
 			lastCharacter = key;
-		}		
+		}
+		
+		Collections.reverse(keyList);
+		lastCharacter = null;
+	    for( Character key : keyList ) {
+	        if( lastCharacter != null ) {
+	            nextSmallerCharMap.put( lastCharacter, key);
+	        }
+
+	        lastCharacter = key;
+	    }
 	}
 	
 	/*
@@ -126,6 +138,8 @@ public class RomanComplexNumber {
 		// The last character is always an addition character
 		Character lastChar = characters[index];
 		addList.add(lastChar);
+		
+		combinedValue = romanNumber;
 	}
 	
 	/*
@@ -134,10 +148,7 @@ public class RomanComplexNumber {
 	 */
 	public RomanComplexNumber( RomanComplexNumber other ) {
 		
-		// No need to clear the lists.  They're already empty.
-		
-		this.addList.addAll(other.addList);
-		this.subtractList.addAll(other.subtractList);
+		this.setEqual(other);
 	}
 	
 	/*
@@ -171,7 +182,11 @@ public class RomanComplexNumber {
 	@Override
 	public String toString() {
 
-		// Build the final string.
+	    return combinedValue;
+	}
+
+    private /*String*/ void updateCombinedValue() {
+        // Build the final string.
 		// Start with the add string
 		List<Character> temp = new ArrayList<Character>();
 		temp.addAll(addList);
@@ -208,8 +223,11 @@ public class RomanComplexNumber {
 			}
 		}
 
-		return characterListToString(temp);
-	}
+		
+		//sortCharacters(temp);
+		//return characterListToString(temp);
+		combinedValue = characterListToString(temp);
+    }
 
 	/*
 	 * There did not seem to be an easy way to convert a List of Characters back
@@ -238,29 +256,106 @@ public class RomanComplexNumber {
 		// When the functions stop altering the lists, we've reached the final
 		// form of the roman numeral.
 		
-		boolean cancelChanged = false;
-		boolean compactChanged = false;
+
+		RomanComplexNumber before = null;
 		
 		do {
-		
+		    before = new RomanComplexNumber(this);
+
+		    expandAdds2();		    
+		    
 			// Allow matching adds and subtracts to cancel each other out.
-			cancelChanged = cancelCharacters();
+			cancelCharacters();
 			
 			// Look for contigiuous groups of digits that I can convert to
 			// larger digits.
-			compactChanged = compactCharacters();
+			compactCharacters();
 
 			// Stop the loop when both cancelCharacters and compactCharacters
 			// fail to make any changes to the content of addList and subtractList
 
-		} while( cancelChanged == true || compactChanged == true );
+		} while( ! this.equals(before) );
+		
+		updateCombinedValue();
 	}
 	
-	/*
+    private boolean expandAdds2() {
+
+        boolean changed = false;
+        
+        // Do we have an intersection between the add & subtract lists?
+        // Yes:  
+        if( subtractList.size() > 0 && addList.size() < subtractList.size() ) {
+            
+            if( containsAny(addList, subtractList) ) {
+                return false;
+            }
+            
+                /* ! containsAny( addList, subtractList) ||  addList.size() < subtractList.size() */ 
+            // There is no intersection between the two lists...
+            
+            // We need to find one the characters in the add list
+            // and replace it with smaller value problems.
+            
+            // Source character?
+            // Destination character?
+            
+            Character biggestSubractCharacter = subtractList.get(0);
+            
+            SpanSplitter<Character> splitter = new SpanSplitter<Character>();
+            
+            List<List<Character>> lists = splitter.split(addList);
+            Collections.reverse(lists);
+            
+            // For each sublist...
+            for( List<Character> thisList : lists ) {
+                Character thisChar = thisList.get(0);
+                
+                if( getRomanValue(thisChar) > getRomanValue(biggestSubractCharacter)) {
+                    int newCharCount = getRomanValue(thisChar) / getRomanValue(biggestSubractCharacter);
+                    thisList.remove(0);
+                    thisList.addAll(Collections.nCopies(newCharCount, biggestSubractCharacter));
+                    
+                    changed = true;
+                    break;
+                }
+            }
+
+            List<Character> newAddList = new ArrayList<Character>();
+            
+            for( List<Character> thisList : lists ) {
+                newAddList.addAll(thisList);
+            }
+            
+            // Sort the new add list
+            sortCharacters(newAddList);
+            
+            addList = newAddList;            
+        }
+
+        return changed;
+    }
+
+    /*
+     * Return true if any elements from listTwo
+     * exist in listOne
+     */
+    private boolean containsAny(List<Character> listOne,
+            List<Character> listTwo) {
+        for( Character i : listTwo) {
+            if( listOne.contains(i)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    /*
 	 * Look for matching characters the two lists and remove the matching ones
 	 * from both lists.
 	 * 
-	 * The lists are sorted.  I can do a merge sor
+	 * The lists are sorted.
 	 */
 	protected boolean cancelCharacters() {
 
@@ -295,6 +390,9 @@ public class RomanComplexNumber {
 			}
 		}
 
+		sortCharacters(addList);
+		sortCharacters(subtractList);
+		
 		return changed;
 	}
 
@@ -365,6 +463,9 @@ public class RomanComplexNumber {
 		addList.clear();
 		addList.addAll(joinedList);
 		
+		sortCharacters(addList);
+		sortCharacters(subtractList);
+		
 		return changed;
 	}
 
@@ -392,7 +493,7 @@ public class RomanComplexNumber {
 	 * numeral
 	 */
 	private static Character getNextRomanCharacter(Character thisChar) {
-		return nextCharMap.get(thisChar);
+		return nextBiggerCharMap.get(thisChar);
 	}	
 
 	/*
@@ -435,5 +536,29 @@ public class RomanComplexNumber {
 		
 		return true;
 	}
+	
+	
+	public void setEqual( RomanComplexNumber other ) {
+	    this.addList.clear();
+	    this.subtractList.clear();
+	    
+	    this.addList.addAll(other.addList);
+        this.subtractList.addAll(other.subtractList);
+        this.combinedValue = other.combinedValue;
+	}
+
+    public boolean equals(RomanComplexNumber other) {
+
+        if( ! this.addList.equals(other.addList) ) {
+            return false;
+        }
+        if( ! this.subtractList.equals(other.subtractList) ) {
+            return false;
+        }
+        
+        return true;
+    }
+	
+	
 }
 
