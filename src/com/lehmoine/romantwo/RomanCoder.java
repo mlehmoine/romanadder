@@ -43,7 +43,9 @@ public class RomanCoder {
         }
         
     }
-    
+    /*
+     * This was relatively easy to write.
+     */
     public int toInt( String romanNumberString ) {
         validate(romanNumberString);
         
@@ -71,7 +73,10 @@ public class RomanCoder {
         return value;
     }
 
-    
+
+    /*
+     * This was much harder to write than I expected.
+     */
     public String fromInt( int number ) {
         String romanNumberString = new String();
         
@@ -83,7 +88,8 @@ public class RomanCoder {
 
         SubtractionDetails subDetails = new SubtractionDetails();
         
-        while( number > 0 ) {            
+        while( number > 0 ) {
+            
             if( number >= thisCharValue ) {
                 romanNumberString += thisChar;
                 number -= thisCharValue;
@@ -113,10 +119,10 @@ public class RomanCoder {
     protected boolean isSubtractionCase( int number, Character thisChar, SubtractionDetails subDetails ) {
         int thisCharValue = RomanUtil.getRomanValue(thisChar);
         
-        Character nextChar = RomanUtil.getNextSmallerCharacter(thisChar);
+        Character nextChar = 'I';
         int nextCharValue = RomanUtil.getRomanValue(nextChar);
 
-        while( nextCharValue > 0 ) {
+        while( ! nextChar.equals(thisChar) ) {
             
             if( number == (thisCharValue - nextCharValue ) && nextCharValue != number ) {
                 subDetails.setSubtractionValue(thisCharValue - nextCharValue);
@@ -124,8 +130,14 @@ public class RomanCoder {
                 subDetails.setSubtraction(true);
                 return true;
             }
+            else if( (thisCharValue - number) < (nextCharValue) && (thisCharValue - nextCharValue != nextCharValue)) {
+                subDetails.setSubtractionValue(thisCharValue - nextCharValue);
+                subDetails.setSubtractionCharacter(nextChar);
+                subDetails.setSubtraction(true);
+                return true;
+            }
             else {
-                nextChar = RomanUtil.getNextSmallerCharacter(nextChar);
+                nextChar = RomanUtil.getNextBiggerCharacter(nextChar);
                 nextCharValue = RomanUtil.getRomanValue(nextChar);
             }
         }

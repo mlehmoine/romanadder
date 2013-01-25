@@ -31,13 +31,17 @@ public class TestRomanCoder {
         RomanCoder coder = new RomanCoder();
 
         Map<Integer,String> vectors = new HashMap<Integer,String>();
+        vectors.put( 6, "VI");
+        
         vectors.put( 1, "I");
-        vectors.put( 5, "V");
         vectors.put( 2, "II");
         vectors.put( 3, "III");
         vectors.put( 4, "IV");
+        vectors.put( 5, "V");
+        vectors.put( 7, "VII");
         vectors.put( 99, "IC");
         vectors.put( 101, "CI");
+        vectors.put( 1954, "MLMIV");
         
         Set<Integer> keys = vectors.keySet();
         for( Integer key : keys ) {
@@ -56,6 +60,8 @@ public class TestRomanCoder {
         vectors.put("VI", 6);
         vectors.put("IV", 4);
         vectors.put("XXVI", 26);
+        vectors.put("MLMIV", 1954);
+        vectors.put("MCMLIV", 1954);
 
         Set<String> keys = vectors.keySet();
         for( String key : keys ) {
@@ -64,6 +70,22 @@ public class TestRomanCoder {
         }
     }
 
+    @Test
+    public void testSymetry() {
+        RomanCoder coder = new RomanCoder();
+       
+        int i;
+        
+        for( i = 1; i <= 2000; i++ ) {
+            System.out.println(i);
+            String stringValue = coder.fromInt(i);
+            int intValue = coder.toInt(stringValue);
+            
+            assertEquals( i, intValue);            
+        }
+        
+    }
+    
     @Test
     public void testToIntExceptions() {
         RomanCoder coder = new RomanCoder();
