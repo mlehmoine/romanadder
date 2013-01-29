@@ -1,11 +1,8 @@
 package com.lehmoine.romantwo;
 
-import java.util.AbstractList;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -430,9 +427,6 @@ public class RomanComplexNumber {
     protected boolean compactAddCharacters() {
         boolean changed = false;        
 
-        @SuppressWarnings("unchecked")
-        LinkedList<RomanDigit> beforeDigits = (LinkedList<RomanDigit>) digits.clone();
-        
         // Filter out the adds
         ListFilter<RomanDigit> addFilter = new ListFilter<RomanDigit>();
         List<RomanDigit> addDigits = addFilter.filter(digits, new IFilterCondition<RomanDigit>(){
