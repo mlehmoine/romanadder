@@ -154,9 +154,7 @@ public class RomanComplexNumber {
 
             // Look for contigiuous groups of digits that I can convert to
             // larger digits.
-            if( changed == false ) {
-                changed |= compactAddCharacters();
-            }
+            changed |= compactAddCharacters();
             changed |= balanceAddSubtract();            
             if( changed == false ) {
                 if( ! validate() ) {
