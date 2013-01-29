@@ -154,7 +154,6 @@ public class RomanComplexNumber {
 
             // Look for contigiuous groups of digits that I can convert to
             // larger digits.
-            changed |= compactCharacters();
             if( changed == false ) {
                 changed |= compactAddCharacters();
             }
@@ -407,23 +406,6 @@ public class RomanComplexNumber {
         return false;
     }
     
-    /*
-     * Look for sequences of repeated characters add characters that need to replaced with 
-     * a subtraction notations.
-     * 
-     */
-    protected boolean compactCharacters(  ) {
-
-        boolean changed = false;        
-        
-        SpanSplitter<RomanDigit> splitter = new SpanSplitter<RomanDigit>();
-        List<SpanSplitter.SpanInfo<RomanDigit>> lists = splitter.split(digits);
-        
-        changed = compactLists(lists);
-                        
-        return changed;
-    }
-
     protected boolean compactAddCharacters() {
         boolean changed = false;        
 
