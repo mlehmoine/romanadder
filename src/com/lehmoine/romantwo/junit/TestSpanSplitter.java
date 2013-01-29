@@ -32,18 +32,18 @@ public class TestSpanSplitter {
 		list.add( new Character('C'));
 	
 		SpanSplitter<Character> splitter = new SpanSplitter<Character>();
-		List<List<Character>> result = splitter.split(list);
+		List<SpanSplitter.SpanInfo<Character>> result = splitter.split(list);
 		
 		assertEquals( result.size(), 3);
 		
-		assertEquals( result.get(0).size(), 1);
-		assertEquals( result.get(0).get(0), new Character('A'));
+		assertEquals( result.get(0).getElements().size(), 1);
+		assertEquals( result.get(0).getElements().get(0), new Character('A'));
 		
-		assertEquals( result.get(1).size(), 1);
-		assertEquals( result.get(1).get(0), new Character('B'));
+		assertEquals( result.get(1).getElements().size(), 1);
+		assertEquals( result.get(1).getElements().get(0), new Character('B'));
 
-		assertEquals( result.get(2).size(), 1);
-		assertEquals( result.get(2).get(0), new Character('C'));
+		assertEquals( result.get(2).getElements().size(), 1);
+		assertEquals( result.get(2).getElements().get(0), new Character('C'));
 	}
 
 	@Test
@@ -57,18 +57,18 @@ public class TestSpanSplitter {
 		list.add( new Character('C'));
 	
 		SpanSplitter<Character> splitter = new SpanSplitter<Character>();
-		List<List<Character>> result = splitter.split(list);
+		List<SpanSplitter.SpanInfo<Character>> result = splitter.split(list);
 
 		assertEquals( result.size(), 3);
 
-		assertEquals( result.get(0).size(), 1);
-		assertEquals( result.get(0).get(0), new Character('A'));
+		assertEquals( result.get(0).getElements().size(), 1);
+		assertEquals( result.get(0).getElements().get(0), new Character('A'));
 		
-		assertEquals( result.get(1).size(), 3);
-		assertEquals( result.get(1).get(0), new Character('B'));
+		assertEquals( result.get(1).getElements().size(), 3);
+		assertEquals( result.get(1).getElements().get(0), new Character('B'));
 
-		assertEquals( result.get(2).size(), 1);
-		assertEquals( result.get(2).get(0), new Character('C'));
+		assertEquals( result.get(2).getElements().size(), 1);
+		assertEquals( result.get(2).getElements().get(0), new Character('C'));
 
 	}
 
@@ -85,18 +85,18 @@ public class TestSpanSplitter {
 		list.add( new Character('C'));
 	
 		SpanSplitter<Character> splitter = new SpanSplitter<Character>();
-		List<List<Character>> result = splitter.split(list);
+		List<SpanSplitter.SpanInfo<Character>> result = splitter.split(list);
 
 		assertEquals( result.size(), 3);
 
-		assertEquals( result.get(0).size(), 1);
-		assertEquals( result.get(0).get(0), new Character('A'));
+		assertEquals( result.get(0).getElements().size(), 1);
+		assertEquals( result.get(0).getElements().get(0), new Character('A'));
 		
-		assertEquals( result.get(1).size(), 3);
-		assertEquals( result.get(1).get(0), new Character('B'));
+		assertEquals( result.get(1).getElements().size(), 3);
+		assertEquals( result.get(1).getElements().get(0), new Character('B'));
 
-		assertEquals( result.get(2).size(), 3);
-		assertEquals( result.get(2).get(0), new Character('C'));
+		assertEquals( result.get(2).getElements().size(), 3);
+		assertEquals( result.get(2).getElements().get(0), new Character('C'));
 	}
 
 	@Test
@@ -106,12 +106,12 @@ public class TestSpanSplitter {
 		list.add( new Character('A'));
 	
 		SpanSplitter<Character> splitter = new SpanSplitter<Character>();
-		List<List<Character>> result = splitter.split(list);
+		List<SpanSplitter.SpanInfo<Character>> result = splitter.split(list);
 
 		assertEquals( result.size(), 1);
 
-		assertEquals( result.get(0).size(), 1);
-		assertEquals( result.get(0).get(0), new Character('A'));
+		assertEquals( result.get(0).getElements().size(), 1);
+		assertEquals( result.get(0).getElements().get(0), new Character('A'));
 	}
 	
 	

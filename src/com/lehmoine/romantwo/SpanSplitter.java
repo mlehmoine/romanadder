@@ -14,15 +14,39 @@ import java.util.List;
 
 public class SpanSplitter<T> {
 	
+	static public class SpanInfo<T> {
+	    private int offset;
+	    private List<T> elements;
+
+	    public SpanInfo(int offset, List<T> elements) {
+	        this.offset = offset;
+	        this.elements = elements;
+	    }
+	    
+	    public int getOffset() {
+            return offset;
+        }
+        public List<T> getElements() {
+            return elements;
+        }
+
+        @Override
+        public String toString() {
+            // TODO Auto-generated method stub
+            return super.toString();
+        }
+	    
+	    
+	}
 	
 	/*
 	 * Split the list into sublists of identical elements
 	 * 
 	 */
 	
-	public List<List<T>> split( List<T> list) {
+	public List<SpanInfo<T>> split( List<T> list) {
 		
-		List<List<T>> result = new ArrayList<List<T>>();
+		List<SpanInfo<T>> result = new ArrayList<SpanInfo<T>>();
 		
 		if( list.isEmpty() ) {
 			return result;
@@ -32,22 +56,29 @@ public class SpanSplitter<T> {
 		
 		List<T> runFragment = new ArrayList<T>();
 		
+		int index = 0;
+		int spanStart = 0;
 		for( T thisElement : list ) {
 			if( thisElement.equals(lastElement) ) {
 				// Nothing to do here
 			}
 			else {
-				result.add(runFragment);
+				result.add(new SpanInfo<T>(spanStart, runFragment));
 				runFragment = new ArrayList<T>();
+				
+				spanStart = index;
 				
 			}
 
 			runFragment.add(thisElement);
 			lastElement = thisElement;
+			
+			index++;
 		}
 		
-		if( ! runFragment.isEmpty() ) {
-			result.add(runFragment);
+		if( ! runFragment.isEmpty() ) { 		    
+		    
+		    result.add(new SpanInfo<T>(spanStart, runFragment));
 		}
 		
 		return result;

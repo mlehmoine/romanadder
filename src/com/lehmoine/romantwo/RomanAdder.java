@@ -13,6 +13,6 @@ public class RomanAdder {
 		
 		RomanComplexNumber complexSum = complexOne.add(complexTwo);
 		
-		return complexSum.toString();
+		return complexSum.format();
 	}
 }

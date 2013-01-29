@@ -1,11 +1,15 @@
 package com.lehmoine.romantwo;
 
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
+import java.util.Stack;
 
 /* General notes on Roman Numbers
  * 
@@ -34,21 +38,18 @@ public class RomanComplexNumber {
      * Class Properties
      */
 
-    // I keep the roman numeral stored as two separate lists of
-    // add and subtract characters.
-    private List<Character> addList = new ArrayList<Character>();
-    private List<Character> subtractList = new ArrayList<Character>();
-    private String combinedValue;
-
+    private LinkedList<RomanDigit> digits = new LinkedList<RomanDigit>();
+    
+    
     /*
      * Given a roman number as an ascii string, create an
      * equivalent RomanComplexNumber
      */
-    public RomanComplexNumber(String romanNumber) {
-        initLists(romanNumber);
+    public RomanComplexNumber(String romanNumber) {        
+        parseDigits(romanNumber);
     }
     
-    protected void initLists(String romanNumber) {
+    protected void parseDigits(String romanNumber) {
 
         if( romanNumber.isEmpty() ) {
             throw new RuntimeException("invalid roman number: empty string");
@@ -58,8 +59,7 @@ public class RomanComplexNumber {
             throw new RuntimeException("invalid roman number: bad format: " +  romanNumber);
         }
 
-        addList.clear();
-        subtractList.clear();
+        digits.clear();
         
         char[] characters = romanNumber.toCharArray();
         int count = characters.length;
@@ -79,34 +79,23 @@ public class RomanComplexNumber {
             if( RomanUtil.getRomanValue(thisChar) < RomanUtil.getRomanValue(nextChar) ) {
                 // The number on the left is smaller than the one on the right.
                 // This indicates subtraction.
-                subtractList.add(thisChar);
+                RomanDigit digit = RomanDigitFactory.newDigit(thisChar,RomanDigit.OPERATION.SUBTRACT);
+                digits.add(digit);
             }
             else {
                 // The number on the left is larger or equal to the digit on
                 // right.  This one indicates addition.
-                addList.add(thisChar);
+                RomanDigit digit = RomanDigitFactory.newDigit(thisChar,RomanDigit.OPERATION.ADD);
+                digits.add(digit);
             }
         }
 
         // The last character is always an addition character
         Character lastChar = characters[index];
-        addList.add(lastChar);
-
-        combinedValue = romanNumber;
+        RomanDigit lastDigit = RomanDigitFactory.newDigit(lastChar,RomanDigit.OPERATION.ADD);
+        digits.add(lastDigit);
     }
 
-    /*
-     * Has this roman numeral been simplified to its
-     */
-    protected boolean isFinal() {
-
-        if( subtractList.size() > 1 ) {
-            return false;
-        }
-        
-        return true;
-    }
-    
     /*
      * This is just a copy constructor.  It makes this number
      * equal to the other number.
@@ -126,15 +115,9 @@ public class RomanComplexNumber {
 
         // Sets 'sum' equal to 'this'
         RomanComplexNumber sum = new RomanComplexNumber(this);
-
-        // Then... Adds the value of 'other' to 'sum'
-        sum.addList.addAll( other.addList );
-        sortCharacters(sum.addList);
-
-        sum.subtractList.addAll( other.subtractList );		
-        sortCharacters(sum.subtractList);
-
-        sum.simplify();
+        sum.digits.addAll(other.digits);
+        sum.reorderSubtracts();
+        sum.normalize();
 
         return sum;
     }
@@ -147,42 +130,7 @@ public class RomanComplexNumber {
     @Override
     public String toString() {
 
-        return combinedValue;
-    }
-
-    private boolean updateCombinedValue() {
-        // Build the final string.
-        // Start with the add string
-
-        if( canEncodeSubtracts() == false ) {
-            return false;
-        }
-        
-        LinkedList<Character> temp = new LinkedList<Character>();
-        temp.addAll(addList);
-
-        int tempOffset = temp.size() - 1;
-        int subOffset = subtractList.size() - 1;
-
-        while( tempOffset >= 0 && subOffset >= 0 ) {
-            Character thisAddChar = temp.get(tempOffset);
-            Character thisSubChar = subtractList.get(subOffset);
-
-            if( RomanUtil.getRomanValue(thisSubChar) < RomanUtil.getRomanValue(thisAddChar)) {
-                temp.add(tempOffset, thisSubChar);		        
-                subOffset--;
-            }
-
-            tempOffset--;
-        }
-
-        if( subOffset != -1 ) {
-            // We 
-            return false;
-        }
-
-        combinedValue = characterListToString(temp);
-        return true;
+        return digits.toString();
     }
 
     /*
@@ -190,11 +138,11 @@ public class RomanComplexNumber {
      * into a string.  This method is dirty and easy.  This way might not be the best.
      * Improve it if possible.
      */
-    private String characterListToString(List<Character> temp) {
+    private String characterListToString(AbstractList<RomanDigit> temp) {
         StringBuffer sb = new StringBuffer();
 
-        for( Character x : temp ) {
-            sb.append(x);
+        for( RomanDigit x : temp ) {
+            sb.append(x.getCharacter());
         }
         return sb.toString();
     }
@@ -206,7 +154,7 @@ public class RomanComplexNumber {
      *  - Combine digits in the add list into subtraction sequences.  move the subtraction
      *    digits to the subtract list.
      */
-    private void simplify() {
+    private void normalize() {
         // Run this loop until the content of the add and subtract lists
         // stops changing on calls to cancelCharacters or compactCharacters.
         // When the functions stop altering the lists, we've reached the final
@@ -223,18 +171,20 @@ public class RomanComplexNumber {
 
             // Look for contigiuous groups of digits that I can convert to
             // larger digits.
-            changed |= compactCharacters2();
             changed |= compactCharacters();
-            changed |= balanceAddSubtract();
             if( changed == false ) {
-                if( ! updateCombinedValue() ) {
-                    changed |= expandAdds2();
-                    if( changed == false ) {
-                        throw new RuntimeException("Shit.  I am out of moves.");
+                changed |= compactAddCharacters();
+            }
+            changed |= balanceAddSubtract();            
+            if( changed == false ) {
+                if( ! validate() ) {
+                    changed = reorderSubtracts();
+                
+                    if( !validate() ) {
+                        throw new RuntimeException( "number is not valid: " + digits.toString() );
                     }
                 }
             }
-            //changed |= expandAdds2();
             
             // Stop the loop when both cancelCharacters and compactCharacters
             // fail to make any changes to the content of addList and subtractList
@@ -251,153 +201,223 @@ public class RomanComplexNumber {
 //        }
     }
 
+    private boolean reorderSubtracts() {
+        
+        // Filter out the adds
+        List<RomanDigit> addDigits = getAddDigits();
+        sortDigits(addDigits);
+
+        // Filter out the subtracts
+        List<RomanDigit> subtractDigits = getSubtractDigits(); 
+        sortDigits(subtractDigits);
+        
+        LinkedList<RomanDigit> reorderedDigits = new LinkedList<RomanDigit>();
+        
+        ListIterator<RomanDigit> addIterator = addDigits.listIterator(addDigits.size());
+        ListIterator<RomanDigit> subIterator = subtractDigits.listIterator(subtractDigits.size());
+
+        RomanDigit nextSubtractDigit = null;
+        if( subIterator.hasPrevious() ) {
+            nextSubtractDigit = subIterator.previous();
+        }
+        while( addIterator.hasPrevious() ) {
+            RomanDigit thisAddDigit = addIterator.previous();
+            reorderedDigits.push(thisAddDigit);
+            
+            if( nextSubtractDigit != null ) {
+                if( nextSubtractDigit.getValue().compareTo(thisAddDigit.getValue()) < 0 ) {
+                    reorderedDigits.push(nextSubtractDigit);
+                    
+                    if( subIterator.hasPrevious() ) {
+                        nextSubtractDigit = subIterator.previous();                      
+                    }
+                    else {
+                        nextSubtractDigit = null;
+                    }
+                }
+            }
+        }
+                
+        LinkedList<RomanDigit> oldDigits = digits;
+        digits = reorderedDigits;
+        
+        return ! digits.equals(oldDigits);
+    }
+
+    private List<RomanDigit> getAddDigits() {
+        ListFilter<RomanDigit> addFilter = new ListFilter<RomanDigit>();
+        List<RomanDigit> addDigits = addFilter.filter(digits, new IFilterCondition<RomanDigit>(){
+
+            @Override
+            public boolean include(RomanDigit element) {
+                return element.getOperation().equals(RomanDigit.OPERATION.ADD);
+            }});
+        return addDigits;
+    }
+
+    private void sortDigits(List<RomanDigit> theseDigits) {
+
+        Collections.sort( theseDigits, new Comparator<RomanDigit>(){
+
+            @Override
+            public int compare(RomanDigit o1, RomanDigit o2) {
+                return o2.getValue().compareTo(o1.getValue());
+            }
+        });
+    }
+
     /* Return true if all of the characters in the subtract list will fit 
      *  
      */
     private boolean canEncodeSubtracts() {
+        
+        int subtractCount = 0;
+        int addCount = 0;
+        
+        //
+        // Create a subset containing just the subtract characters
+        //
+        
+        List<RomanDigit> subtractDigits = getSubtractDigits();
 
-        // if the subtract list is already too long.
+        //
+        // Count up the number of adds & subtracts.
+        // Figure out if we have too many subtracts.
         // 
-        if( subtractList.size() > addList.size() ) {
+        
+        subtractCount = subtractDigits.size();
+        addCount = digits.size() - subtractCount;
+            
+        if( subtractCount > addCount ) {
+            // We have too many subtracts
             return false;
         }
+        
+        //
+        // Group the subtract characters up by value.
+        // Figure out if we have too many subtracts for any 
+        // one value
+        //
+        
+        ListGrouper<RomanDigit> g = new ListGrouper<RomanDigit>();
+        List<List<RomanDigit>> groups = g.groupBy(subtractDigits, new Comparator<RomanDigit>(){
 
-        SpanSplitter<Character> splitter = new SpanSplitter<Character>();
-
-        // Only one of each character is allowed in the subtract list.
-        List<List<Character>> lists = splitter.split(subtractList);
-        for( List<Character> list : lists ) {
-            if( list.size() > 1 ) {
+            @Override
+            public int compare(RomanDigit arg0, RomanDigit arg1) {
+                return arg0.getValue().compareTo(arg1.getValue());
+            }});
+        
+        for( List<RomanDigit> group : groups ) {
+            if( group.size() > 1 ) {
                 return false;
             }
         }
 
-
         return true;
     }
 
-    private boolean expandAdds2() {
+    private List<RomanDigit> getSubtractDigits() {
+        ListFilter<RomanDigit> subtractFilter = new ListFilter<RomanDigit>();
+        List<RomanDigit> subtractDigits = subtractFilter.filter(digits, new IFilterCondition<RomanDigit>(){
+
+            @Override
+            public boolean include(RomanDigit element) {
+                return element.getOperation().equals(RomanDigit.OPERATION.SUBTRACT);
+            }});
+        return subtractDigits;
+    }    
+
+    /*
+     * Look for characters that cancel each other out.
+     * Look for an add and a subtract of the same value.
+     * 
+     */
+    protected boolean cancelCharacters() {
 
         boolean changed = false;
+        
+        ListGrouper<RomanDigit> g = new ListGrouper<RomanDigit>();
+        List<List<RomanDigit>> lists = g.groupBy(digits, new Comparator<RomanDigit>(){
 
-        // Do we have an intersection between the add & subtract lists?
-        // Yes:  
-        if( subtractList.size() > 0 ) {
+            @Override
+            public int compare(RomanDigit o1, RomanDigit o2) {
+                return o1.getValue().compareTo(o2.getValue());
+            }});
+        
+        // List are grouped by value;
+        for( List<RomanDigit> list : lists ) {
 
-            //            if( containsAny(addList, subtractList) ) {
-            //                return false;
-            //            }
-
-            /* ! containsAny( addList, subtractList) ||  addList.size() < subtractList.size() */ 
-            // There is no intersection between the two lists...
-
-            // We need to find one the characters in the add list
-            // and replace it with smaller value problems.
-
-            // Source character?
-            // Destination character?
-
-            Character biggestSubractCharacter = subtractList.get(0);
-
-            SpanSplitter<Character> splitter = new SpanSplitter<Character>();
-
-            List<List<Character>> lists = splitter.split(addList);
-            Collections.reverse(lists);
-
-            // For each sublist...
-            for( List<Character> thisList : lists ) {
-                Character thisChar = thisList.get(0);
-
-                if( RomanUtil.getRomanValue(thisChar) > RomanUtil.getRomanValue(biggestSubractCharacter)) {
-                    int newCharCount = RomanUtil.getRomanValue(thisChar) / RomanUtil.getRomanValue(biggestSubractCharacter);
-                    thisList.remove(0);
-                    thisList.addAll(Collections.nCopies(newCharCount, biggestSubractCharacter));
-
-                    changed = true;
-                    break;
+            Stack<RomanDigit> stackola = new Stack<RomanDigit>();
+            // bias > 0 : surplus of adds
+            // bias < 0 : surplus of subs
+            int bias = 0;
+            
+            for( RomanDigit digit : list ) {
+                if( digit.getOperation().equals(RomanDigit.OPERATION.ADD) && bias < 0 ) {
+                    bias++;
+                    RomanDigit r = stackola.pop();
+                    digits.remove(r);
+                    digits.remove(digit);
                 }
+                else if( digit.getOperation().equals(RomanDigit.OPERATION.SUBTRACT) && bias > 0 ) {
+                    bias--;
+                    RomanDigit r = stackola.pop();
+                    digits.remove(r);
+                    digits.remove(digit);
+                }
+                else {
+                    if( digit.getOperation().equals(RomanDigit.OPERATION.ADD)) {
+                        stackola.push(digit);
+                        bias++;
+                    }
+                    else if( digit.getOperation().equals(RomanDigit.OPERATION.SUBTRACT) ) {
+                        stackola.push(digit);
+                        bias--;
+                    }
+                    else {
+                        throw new RuntimeException( "unknown RomanDigit operation");
+                    }
+                }               
             }
-
-            List<Character> newAddList = new ArrayList<Character>();
-
-            for( List<Character> thisList : lists ) {
-                newAddList.addAll(thisList);
-            }
-
-            // Sort the new add list
-            sortCharacters(newAddList);
-
-            addList = newAddList;            
+            
         }
-
         return changed;
     }
 
     /*
-     * Look for matching characters the two lists and remove the matching ones
-     * from both lists.
-     * 
-     * The lists are sorted.
+     * Look for subtracts have a matching 
      */
-    protected boolean cancelCharacters() {
-
-        int offsetOne = 0;
-        int offsetTwo = 0;
-
-        boolean changed = false;
-
-        // Keep looking till I reach the of at least one of the lists.
-        while( offsetOne < addList.size() && offsetTwo < subtractList.size() ) {
-            Character charOne = addList.get(offsetOne);
-            Character charTwo = subtractList.get(offsetTwo);
-
-            int valueOne = RomanUtil.getRomanValue(charOne);
-            int valueTwo = RomanUtil.getRomanValue(charTwo);
-
-            if( valueOne == valueTwo ) {
-                // These are equal.
-                // They cancel each other out.  Remove them.
-                addList.remove(offsetOne);
-                subtractList.remove(offsetTwo);
-
-                changed = true;
-            }
-            else if( valueOne > valueTwo ) {
-                // Not each.  move to the position in one of the lists.
-                offsetOne++;
-            }
-            else { // valueTwo > ValueOne
-                // Not each.  move to the position in one of the lists.
-                offsetTwo++;
-            }
-        }
-
-        sortCharacters(addList);
-        sortCharacters(subtractList);
-
-        return changed;
-    }
-
     protected boolean balanceAddSubtract() {
         
-        int subOffset = 0;
+        int i;
+        int j;
         
-        for( subOffset = 0; subOffset < subtractList.size(); subOffset++ ) {
-            Character subChar = subtractList.get(subOffset);
-            int subCharValue = RomanUtil.getRomanValue(subChar);
+        for( i = 0; i < digits.size(); i++ ) {
+            RomanDigit a = digits.get(i);
             
-            int addOffset = 0;
+            // We disregard anything that's an add
+            if( a.isAdd() ) {
+                continue;
+            }
             
-            for( addOffset = 0; addOffset < addList.size(); addOffset++ ) {
-                Character addChar = addList.get(addOffset);
-                int addCharValue = RomanUtil.getRomanValue(addChar);
+            for( j = i + 1; j < digits.size(); j++ ) {
+                RomanDigit b = digits.get(j);
                 
-                if( subCharValue == addCharValue*2) {
-                    addList.remove(addOffset);
-                    subtractList.set(subOffset, addChar);
-                    return true;
+                if( b.isSubtract() ) {
+                    continue;
                 }
                 
+                if( a.getValue().equals( 2*b.getValue() )) {
+                    int replaceOffset = digits.indexOf(a);
+                    
+                    // Replace the first digit with a smaller digit
+                    digits.remove(replaceOffset);
+                    digits.add(replaceOffset, b.getType().newSubtractDigit() );
+                    
+                    // Remove the second digit completely
+                    digits.remove(b);
+                    return true;
+                }
             }
         }
         
@@ -405,179 +425,212 @@ public class RomanComplexNumber {
     }
     
     /*
-     * Look for sequences of repeated characters in the add list that can be replaced
-     * with bigger digits or subtraction sequences
+     * Look for sequences of repeated characters add characters that need to replaced with 
+     * a subtraction notations.
      * 
-     * The way I'm doing this lists may be a bit inefficient.  It would be quicker it
-     * iterate over the original list without breaking it up.  I got hung up and iterating
-     * it while trying to change it without messing it up.  I settled on this approach because it
-     * worked, was simpler, and easier to read.
      */
     protected boolean compactCharacters(  ) {
 
-        class ReplaceOperation { 
-            private String in;
-            private String out;
-            
-            ReplaceOperation(String in, String out) {
-                this.in = in;
-                this.out = out;
-            }
-
-            public String getIn() {
-                return in;
-            }
-
-            public String getOut() {
-                return out;
-            }            
-        }
-        
-        List<ReplaceOperation> operations = new ArrayList<ReplaceOperation>();
-        operations.add( new ReplaceOperation("IIIII", "V") );
-        operations.add( new ReplaceOperation("IIII", "IV") );
-        operations.add( new ReplaceOperation("VV", "X") );
-        operations.add( new ReplaceOperation("XXXXX", "L") );
-        operations.add( new ReplaceOperation("XXXX", "XL") );
-        operations.add( new ReplaceOperation("LL", "C") );
-        operations.add( new ReplaceOperation("CCCCC", "D") );
-        operations.add( new ReplaceOperation("CCCC", "CD") );
-
         boolean changed = false;        
         
-        if( !updateCombinedValue() ) {
-
-            // now what?  how can i make this not suck?
-            
-            return false;
-        }
-
-        String oldValue = new String(combinedValue);
-
-        for( ReplaceOperation operation : operations ) {
-            combinedValue = combinedValue.replace( operation.getIn(), operation.getOut() );
-            if( ! combinedValue.equals(oldValue) ) {
-                changed = true;
-                initLists(combinedValue);
-                break;
-            }
-        }
-                
+        SpanSplitter<RomanDigit> splitter = new SpanSplitter<RomanDigit>();
+        List<SpanSplitter.SpanInfo<RomanDigit>> lists = splitter.split(digits);
+        
+        changed = compactLists(lists);
+                        
         return changed;
     }
 
-    protected boolean compactCharacters2() {
-        boolean changed = false;
+    protected boolean compactAddCharacters() {
+        boolean changed = false;        
 
-        SpanSplitter<Character> splitter = new SpanSplitter<Character>();
-        List<List<Character>> lists = splitter.split(addList);
-
-        // For each sublist...
-        for( List<Character> thisList : lists ) {
-            Character thisCharacter = thisList.get(0);
-            Character nextCharacter = RomanUtil.getNextBiggerCharacter(thisCharacter);
-            int maxSpan = getMaxRunForCharacter(thisCharacter);
-            
-            if( maxSpan == 2 && thisList.size() == 2 ) {
-                thisList.remove(0);
-                thisList.set(0, nextCharacter);
-                changed = true;
-                break;
-            }
-
-        }
+        @SuppressWarnings("unchecked")
+        LinkedList<RomanDigit> beforeDigits = (LinkedList<RomanDigit>) digits.clone();
         
-        if( changed == true ) {
-            List<Character> joinedList = splitter.join(lists);
-            addList.clear();
-            addList.addAll(joinedList);
-            
-            sortCharacters(addList);
-            sortCharacters(subtractList);
-
-        }
-        
-        return changed;
-    }
-
-    private List<Character> stringToCharacterArray(String string) {
-        List<Character> result = new ArrayList<Character>();
-        
-        for( char c : string.toCharArray() ) {
-            result.add(c);
-        }
-
-        return result;
-    }
-
-    private boolean checkForTooManyConsecutiveCharacters(List<Character> joinedList) {
-        
-        SpanSplitter<Character> splitter = new SpanSplitter<Character>();
-
-        List<List<Character>> lists = splitter.split(joinedList);
-        for( List<Character> list : lists ) {
-            int maxLength = getMaxRunForCharacter(list.get(0));
-            if( list.size() > maxLength ) {
-                return false;
-            }
-        }
-        
-        return true;
-    }
-
-    /*
-     * For the given character, what is the maximum number of contiguous
-     * numbers that I can have before I must replace them with the next
-     * biggest roman number digit
-     */
-    private static int getMaxRunForCharacter(Character runCharacter) {
-        int runCharValue = RomanUtil.getRomanValue(runCharacter);
-        Character nextChar = RomanUtil.getNextBiggerCharacter(runCharacter);
-
-        if( nextChar != null ) {
-            int nextCharValue = RomanUtil.getRomanValue(nextChar);
-
-            return nextCharValue / runCharValue;			
-        }
-        else {
-            return 5;
-        }
-    }
-
-    /*
-     * Sort a list of roman numerals 
-     */
-    static protected void sortCharacters( List<Character> list ) {
-        Collections.sort( list, new Comparator<Character>() {
+        // Filter out the adds
+        ListFilter<RomanDigit> addFilter = new ListFilter<RomanDigit>();
+        List<RomanDigit> addDigits = addFilter.filter(digits, new IFilterCondition<RomanDigit>(){
 
             @Override
-            public int compare(Character o1, Character o2) {
-                return RomanUtil.getRomanValue(o2) - RomanUtil.getRomanValue(o1);
+            public boolean include(RomanDigit element) {
+                return element.getOperation().equals(RomanDigit.OPERATION.ADD);
+            }});
+
+        SpanSplitter<RomanDigit> splitter = new SpanSplitter<RomanDigit>();
+        List<SpanSplitter.SpanInfo<RomanDigit>> lists = splitter.split(addDigits);
+        
+        changed = compactLists(lists);
+        
+        if( canEncodeSubtracts() == false ) {
+            // decompose one of the add characters
+            decomposeAddDigits();
+            changed = true;
+        }
+                        
+        return changed;
+        
+    }
+    
+    private void decomposeAddDigits() {
+        
+        RomanDigitType smallestAddDigitType = null;
+        RomanDigitType smallestSubtractDigitType = null;
+        
+        ListIterator<RomanDigit> i = digits.listIterator(digits.size());
+        
+        while( i.hasPrevious() && ( smallestAddDigitType == null || smallestSubtractDigitType == null ) ) {
+            RomanDigit thisDigit = i.previous();
+            
+            if( thisDigit.isAdd() && smallestAddDigitType == null ) {
+                smallestAddDigitType = thisDigit.getType();
             }
-        });
+            else if( thisDigit.isSubtract() && smallestSubtractDigitType == null) {
+                smallestSubtractDigitType = thisDigit.getType();
+            }
+        }
+        
+        if( smallestAddDigitType == null || smallestSubtractDigitType == null ) {
+            throw new RuntimeException( "something bad has happened");
+        }
+        
+        LinkedList<RomanDigitType> stackola = new LinkedList<RomanDigitType>();
+        
+        RomanDigitType thisType = smallestSubtractDigitType;
+        
+        while( true ) {
+            thisType = thisType.getNextBiggerDigit();            
+
+            stackola.push(thisType);
+            
+            if( thisType == smallestAddDigitType ) {
+                break;
+            }
+        }
+        
+        while( stackola.size() > 0  ) {
+            thisType = stackola.pop();
+            RomanDigit digitToExplode = thisType.newAddDigit();
+            RomanDigitType smallerDigitType = thisType.getNextSmallerDigit();
+            
+            int numSmallerDigits = digitToExplode.getValue() / smallerDigitType.getValue();
+            RomanDigit smallerDigit = smallerDigitType.newAddDigit();
+            
+            digits.remove(digitToExplode);
+            
+            for( int j = 0; j < numSmallerDigits; j++ ) {
+                digits.add(smallerDigit);
+            }            
+        }        
     }
 
-    public void setEqual( RomanComplexNumber other ) {
-        this.addList.clear();
-        this.subtractList.clear();
+    private boolean compactLists(List<SpanSplitter.SpanInfo<RomanDigit>> lists) {
+        
+        boolean changed = false;
+        
+        for( SpanSplitter.SpanInfo<RomanDigit> list : lists ) {
+            List<RomanDigit> elements = list.getElements();
+            RomanDigitType type = list.getElements().get(0).getType();
+            RomanDigitType nextBiggerChar = type.getNextBiggerDigit();
+            
+            RomanDigit firstDigit = elements.get(0);
+            
+            switch( type.getRunLength() ) {
+            case SHORT:
+                if( elements.size() >= 2 ) {
+                    RomanDigit replacement = nextBiggerChar.newDigit(RomanDigit.OPERATION.ADD);
+                    List<RomanDigit> replacementList = new ArrayList<RomanDigit>();
+                    replacementList.add(replacement);
+                    replaceDigits( firstDigit, 2, replacementList );
+                    changed = true;
+                }                
+                break;
+              
+            case LONG:
+                if( elements.size() >= 5 ) {
+                    RomanDigit replacement = nextBiggerChar.newDigit(RomanDigit.OPERATION.ADD);
+                    List<RomanDigit> replacementList = new ArrayList<RomanDigit>();
+                    replacementList.add(replacement);
+                    replaceDigits( firstDigit, 5, replacementList );
+                    changed = true;
+                }
+                else if( elements.size() == 4 ) {
+                    List<RomanDigit> replacementList = new ArrayList<RomanDigit>();
+                    replacementList.add(type.newSubtractDigit());
+                    replacementList.add(nextBiggerChar.newAddDigit());
+                    replaceDigits( firstDigit, 4, replacementList );
+                    changed = true;
+                }
+                
+                break;
+                
+            case VERYLONG:
+                // These is nothing that can be done for this type of character
+                // to make repeated sequences any shorter.
+                break;
+                
+            default:
+                throw new RuntimeException("illegal run length");
+             
+            }
+            
+            if( changed == true ) {
+                break;
+            }
+        }
+        return changed;
+    }
 
-        this.addList.addAll(other.addList);
-        this.subtractList.addAll(other.subtractList);
-        this.combinedValue = other.combinedValue;
+    private void replaceDigits(RomanDigit element, int count,
+            List<RomanDigit> replacementList) {
+        
+        int i = 0;
+        for( i = 0; i < count; i++ ) {
+            digits.remove(element);
+        }
+        digits.addAll(replacementList);
+    }
+        
+
+    public void setEqual( RomanComplexNumber other ) {
+
+        this.digits.clear();
+        for( RomanDigit digit : other.digits ) {
+            this.digits.add( new RomanDigit(digit));
+        }
     }
 
     public boolean equals(RomanComplexNumber other) {
 
-        if( ! this.addList.equals(other.addList) ) {
-            return false;
-        }
-        if( ! this.subtractList.equals(other.subtractList) ) {
-            return false;
-        }
+        return digits.equals(other.digits);
+   }
 
+    public boolean validate() {
+        int i;
+        
+        for( i = 0; i < digits.size()-1; i++ ) {
+            RomanDigit thisDigit = digits.get(i);
+            RomanDigit nextDigit = digits.get(i+1);
+            
+            if( thisDigit.isAdd() && thisDigit.getValue().compareTo(nextDigit.getValue() ) < 0 ) {
+                return false;
+            }
+            
+        }
+        
+        RomanDigit lastDigit = digits.get(i);
+        if( lastDigit.isSubtract() ) {
+            return false;            
+        }
+        
         return true;
     }
 
-
+    public String format() {
+        StringBuffer sb = new StringBuffer();
+        for( RomanDigit digit : digits ) {
+            sb.append(digit.getCharacter());
+        }
+        return sb.toString();
+    }
 }
 
