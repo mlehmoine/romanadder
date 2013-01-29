@@ -134,20 +134,6 @@ public class RomanComplexNumber {
     }
 
     /*
-     * There did not seem to be an easy way to convert a List of Characters back
-     * into a string.  This method is dirty and easy.  This way might not be the best.
-     * Improve it if possible.
-     */
-    private String characterListToString(AbstractList<RomanDigit> temp) {
-        StringBuffer sb = new StringBuffer();
-
-        for( RomanDigit x : temp ) {
-            sb.append(x.getCharacter());
-        }
-        return sb.toString();
-    }
-
-    /*
      * Simplify the internal representation of this roman numeral.
      *  - Use digits in the subtraction list to cancel out digits in the addition list.
      *  - Combine digits in the add list into bigger digits
