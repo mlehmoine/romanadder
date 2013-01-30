@@ -1,6 +1,3 @@
-romanadder
-==========
-
 In a somewhat recent interview, I was asked how I would add Roman numbers together without first
 converting them into decimal notation.  I had to work completely within the string domain.
 I stumbled through the question and did not present a good answer.  I went home and made an attempt
