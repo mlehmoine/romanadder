@@ -8,4 +8,7 @@ to code a working solution.  I sent it in the solution.  I looked it over months
 discovered it had a bug.  I missed a fairly important test case.  My bad.  I made another attempt with
 a better set of test cases.  This is my solution.
 
-There is a crude [Main][/src]
+There is a crude [Main][main]
+
+
+[main]: http://lehmoine.org
