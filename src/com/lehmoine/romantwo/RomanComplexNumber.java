@@ -26,7 +26,8 @@ import java.util.Stack;
 /*
  * Here are some things that I've learned about roman numerals through experimentation.
  * 
- * 1 - Roman numerals are hard.
+ * 1 - This was harder than I expected it to be.
+ * 
  */
 
 public class RomanComplexNumber {
@@ -52,10 +53,6 @@ public class RomanComplexNumber {
             throw new RuntimeException("invalid roman number: empty string");
         }		
 
-        if( ! RomanUtil.validate(romanNumber) ) {
-            throw new RuntimeException("invalid roman number: bad format: " +  romanNumber);
-        }
-
         digits.clear();
         
         char[] characters = romanNumber.toCharArray();
@@ -70,26 +67,26 @@ public class RomanComplexNumber {
         // subtracts
 
         for( index = 0; index < (count-1); index++ ) {
-            Character thisChar = characters[index];
-            Character nextChar = characters[index+1];
+            RomanDigitType thisCharType = RomanDigitFactory.getDigitType(characters[index]);
+            RomanDigitType nextCharType = RomanDigitFactory.getDigitType(characters[index+1]);
 
-            if( RomanUtil.getRomanValue(thisChar) < RomanUtil.getRomanValue(nextChar) ) {
+            if( thisCharType.getValue() < nextCharType.getValue() ) {
                 // The number on the left is smaller than the one on the right.
                 // This indicates subtraction.
-                RomanDigit digit = RomanDigitFactory.newDigit(thisChar,RomanDigit.OPERATION.SUBTRACT);
+                RomanDigit digit = thisCharType.newSubtractDigit();
                 digits.add(digit);
             }
             else {
                 // The number on the left is larger or equal to the digit on
                 // right.  This one indicates addition.
-                RomanDigit digit = RomanDigitFactory.newDigit(thisChar,RomanDigit.OPERATION.ADD);
+                RomanDigit digit = thisCharType.newAddDigit();
                 digits.add(digit);
             }
         }
 
         // The last character is always an addition character
-        Character lastChar = characters[index];
-        RomanDigit lastDigit = RomanDigitFactory.newDigit(lastChar,RomanDigit.OPERATION.ADD);
+        RomanDigitType lastCharType = RomanDigitFactory.getDigitType(characters[index]);
+        RomanDigit lastDigit = lastCharType.newAddDigit();
         digits.add(lastDigit);
     }
 

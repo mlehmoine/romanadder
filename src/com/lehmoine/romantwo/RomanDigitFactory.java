@@ -24,4 +24,9 @@ public class RomanDigitFactory {
         
         return digit;
     }
+    
+    static RomanDigitType getDigitType( Character c ) {
+        RomanDigitType type = charToType.get(c);
+        return type;
+    }
 }
