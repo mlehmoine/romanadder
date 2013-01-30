@@ -10,7 +10,7 @@ public class RomanCoder {
     
     class SubtractionDetails {
         private boolean isSubtraction;
-        private Character subtractionCharacter;
+        private RomanDigitType subtractionCharacterType;
         private int subtractionValue;
 
         public SubtractionDetails() {
@@ -23,11 +23,11 @@ public class RomanCoder {
         public void setSubtraction(boolean isSubtraction) {
             this.isSubtraction = isSubtraction;
         }
-        public Character getSubtractionCharacter() {
-            return subtractionCharacter;
+        public RomanDigitType getSubtractionCharacterType() {
+            return subtractionCharacterType;
         }
-        public void setSubtractionCharacter(Character subtractionCharacter) {
-            this.subtractionCharacter = subtractionCharacter;
+        public void setSubtractionCharacterType(RomanDigitType subtractionCharacterType) {
+            this.subtractionCharacterType = subtractionCharacterType;
         }
         public int getSubtractionValue() {
             return subtractionValue;
@@ -38,7 +38,7 @@ public class RomanCoder {
         
         public void reset() {
             isSubtraction = false;
-            subtractionCharacter = null;
+            subtractionCharacterType = null;
             subtractionValue = 0;                   
         }
         
@@ -56,19 +56,20 @@ public class RomanCoder {
         
         // Iterate through every character but the last one.
         for( charIndex = 0; charIndex < charLength-1; charIndex++ ) {
-            Character thisChar = romanNumberString.charAt(charIndex);
-            Character nextChar = romanNumberString.charAt(charIndex+1);            
+            RomanDigitType thisDigitType = RomanDigitFactory.getDigitType(romanNumberString.charAt(charIndex));
+            RomanDigitType nextDigitType = RomanDigitFactory.getDigitType(romanNumberString.charAt(charIndex+1));
             
-            if( RomanUtil.getRomanValue(thisChar) >= RomanUtil.getRomanValue(nextChar) ) {
-                value += RomanUtil.getRomanValue(thisChar);
+            if( thisDigitType.getValue() >= nextDigitType.getValue() ) {
+                value += thisDigitType.getValue();
             }
             else {
-                value -= RomanUtil.getRomanValue(thisChar);
+                value -= thisDigitType.getValue();
             }            
         }
         
         // The last character is always an add
-        value += RomanUtil.getRomanValue(romanNumberString.charAt(charIndex));
+        RomanDigitType lastDigitType = RomanDigitFactory.getDigitType(romanNumberString.charAt(charIndex));
+        value += lastDigitType.getValue();
         
         return value;
     }
@@ -80,65 +81,56 @@ public class RomanCoder {
     public String fromInt( int number ) {
         String romanNumberString = new String();
         
-        Character thisChar = 'M';
-        int thisCharValue = RomanUtil.getRomanValue(thisChar);
+        RomanDigitType thisCharType = RomanDigitFactory.getDigitType('M');
 
-        Character nextChar = RomanUtil.getNextSmallerCharacter(thisChar);
-        int nextCharValue = RomanUtil.getRomanValue(nextChar);
+        RomanDigitType nextCharType = thisCharType.getNextSmallerDigit();
 
         SubtractionDetails subDetails = new SubtractionDetails();
         
         while( number > 0 ) {
             
-            if( number >= thisCharValue ) {
-                romanNumberString += thisChar;
-                number -= thisCharValue;
+            if( number >= thisCharType.getValue() ) {
+                romanNumberString += thisCharType.getCharacter();
+                number -= thisCharType.getValue();
             }
-            else if( isSubtractionCase(number, thisChar, subDetails) ) {
-                romanNumberString += subDetails.getSubtractionCharacter();
-                romanNumberString += thisChar;
+            else if( isSubtractionCase(number, thisCharType, subDetails) ) {
+                romanNumberString += subDetails.getSubtractionCharacterType().getCharacter();
+                romanNumberString += thisCharType.getCharacter();
                 number -= ( subDetails.getSubtractionValue() );
             }
-            else if ( (number < thisCharValue) && (number > nextCharValue ) ) { 
-                romanNumberString += nextChar;
-                number -= nextCharValue;
+            else if ( (number < thisCharType.getValue()) && (number > nextCharType.getValue() ) ) { 
+                romanNumberString += nextCharType.getCharacter();
+                number -= nextCharType.getValue();
             }
             else {
                 
-                thisChar = nextChar;
-                thisCharValue = nextCharValue;
-                
-                nextChar = RomanUtil.getNextSmallerCharacter(thisChar);
-                nextCharValue = RomanUtil.getRomanValue(nextChar);
+                thisCharType = nextCharType;
+                nextCharType = thisCharType.getNextSmallerDigit();
             }
         }
         
         return romanNumberString;
     }
     
-    protected boolean isSubtractionCase( int number, Character thisChar, SubtractionDetails subDetails ) {
-        int thisCharValue = RomanUtil.getRomanValue(thisChar);
-        
-        Character nextChar = 'I';
-        int nextCharValue = RomanUtil.getRomanValue(nextChar);
+    protected boolean isSubtractionCase( int number, RomanDigitType thisCharType, SubtractionDetails subDetails ) {
+        RomanDigitType nextCharType = RomanDigitFactory.getDigitType('I');
 
-        while( ! nextChar.equals(thisChar) ) {
+        while( ! nextCharType.equals(thisCharType) ) {
             
-            if( number == (thisCharValue - nextCharValue ) && nextCharValue != number ) {
-                subDetails.setSubtractionValue(thisCharValue - nextCharValue);
-                subDetails.setSubtractionCharacter(nextChar);
+            if( number == (thisCharType.getValue() - nextCharType.getValue() ) && nextCharType.getValue() != number ) {
+                subDetails.setSubtractionValue(thisCharType.getValue() - nextCharType.getValue());
+                subDetails.setSubtractionCharacterType(nextCharType);
                 subDetails.setSubtraction(true);
                 return true;
             }
-            else if( (thisCharValue - number) < (nextCharValue) && (thisCharValue - nextCharValue != nextCharValue)) {
-                subDetails.setSubtractionValue(thisCharValue - nextCharValue);
-                subDetails.setSubtractionCharacter(nextChar);
+            else if( (thisCharType.getValue() - number) < (nextCharType.getValue()) && (thisCharType.getValue() - nextCharType.getValue() != nextCharType.getValue())) {
+                subDetails.setSubtractionValue(thisCharType.getValue() - nextCharType.getValue());
+                subDetails.setSubtractionCharacterType(nextCharType);
                 subDetails.setSubtraction(true);
                 return true;
             }
             else {
-                nextChar = RomanUtil.getNextBiggerCharacter(nextChar);
-                nextCharValue = RomanUtil.getRomanValue(nextChar);
+                nextCharType = nextCharType.getNextBiggerDigit();
             }
         }
         
@@ -147,7 +139,7 @@ public class RomanCoder {
     }
 
     private void validate(String romanNumberString) {
-        if( RomanUtil.validate(romanNumberString) == false ) {
+        if( RomanNumber.validate(romanNumberString) == false ) {
             throw new IllegalArgumentException( romanNumberString + " is not a valid roman number.");
         }
     }

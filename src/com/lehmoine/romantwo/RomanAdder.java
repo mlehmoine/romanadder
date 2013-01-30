@@ -8,10 +8,10 @@ public class RomanAdder {
 	 * Return the result to the caller.
 	 */
 	public String add( String one, String two ) {
-		RomanComplexNumber complexOne = new RomanComplexNumber(one);
-		RomanComplexNumber complexTwo = new RomanComplexNumber(two);
+		RomanNumber complexOne = new RomanNumber(one);
+		RomanNumber complexTwo = new RomanNumber(two);
 		
-		RomanComplexNumber complexSum = complexOne.add(complexTwo);
+		RomanNumber complexSum = complexOne.add(complexTwo);
 		
 		return complexSum.format();
 	}

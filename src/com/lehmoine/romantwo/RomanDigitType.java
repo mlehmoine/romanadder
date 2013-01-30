@@ -82,6 +82,11 @@ public class RomanDigitType implements IHasValue {
     public boolean equals(RomanDigitType other) {
         return this.value == other.value;
     }
+
+    @Override
+    public String toString() {
+        return this.getCharacter().toString();
+    }
     
     
 }

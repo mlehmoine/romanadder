@@ -30,7 +30,7 @@ import java.util.Stack;
  * 
  */
 
-public class RomanComplexNumber {
+public class RomanNumber {
 
     /*
      * Class Properties
@@ -43,7 +43,7 @@ public class RomanComplexNumber {
      * Given a roman number as an ascii string, create an
      * equivalent RomanComplexNumber
      */
-    public RomanComplexNumber(String romanNumber) {        
+    public RomanNumber(String romanNumber) {        
         parseDigits(romanNumber);
     }
     
@@ -94,7 +94,7 @@ public class RomanComplexNumber {
      * This is just a copy constructor.  It makes this number
      * equal to the other number.
      */
-    public RomanComplexNumber( RomanComplexNumber other ) {
+    public RomanNumber( RomanNumber other ) {
 
         this.setEqual(other);
     }
@@ -103,12 +103,12 @@ public class RomanComplexNumber {
      * Add this number to the other number and return the result
      * to the caller.
      */
-    public RomanComplexNumber add( RomanComplexNumber other ) {
+    public RomanNumber add( RomanNumber other ) {
         // Adding is easy.  I just concatenate the add subtract lists
         // and sort them by order for easy handling.
 
         // Sets 'sum' equal to 'this'
-        RomanComplexNumber sum = new RomanComplexNumber(this);
+        RomanNumber sum = new RomanNumber(this);
         sum.digits.addAll(other.digits);
         sum.reorderSubtracts();
         sum.normalize();
@@ -546,7 +546,7 @@ public class RomanComplexNumber {
     }
         
 
-    public void setEqual( RomanComplexNumber other ) {
+    public void setEqual( RomanNumber other ) {
 
         this.digits.clear();
         for( RomanDigit digit : other.digits ) {
@@ -554,7 +554,7 @@ public class RomanComplexNumber {
         }
     }
 
-    public boolean equals(RomanComplexNumber other) {
+    public boolean equals(RomanNumber other) {
 
         return digits.equals(other.digits);
    }
@@ -587,5 +587,26 @@ public class RomanComplexNumber {
         }
         return sb.toString();
     }
+
+    /*
+     * Try to figure out if the roman numeral is valid
+     */
+    static public boolean validate(String romanNumber) {
+        
+        // Check to see if there are any invalid characters in the string.
+        if( !romanNumber.matches("[IVXLCDM]+") ) {
+            return false;
+        }
+
+        // Look for sequences of digits that are too long.
+        // D L V: cannot be repeated
+        // I X C M: No more than 3 in a row
+        
+        if( romanNumber.matches(".*(DD|LL|VV|IIII|XXXX|CCCC|MMMM).*") ) {
+            return false;
+        }
+        
+        return true;
+    }    
 }
 
