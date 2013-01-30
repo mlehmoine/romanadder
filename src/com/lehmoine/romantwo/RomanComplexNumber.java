@@ -138,21 +138,19 @@ public class RomanComplexNumber {
      *    digits to the subtract list.
      */
     private void normalize() {
-        // Run this loop until the content of the add and subtract lists
-        // stops changing on calls to cancelCharacters or compactCharacters.
-        // When the functions stop altering the lists, we've reached the final
-        // form of the roman numeral.
+        // Run this loop until the operations are no longer able to change the
+        // number and we've stopped at a reasonable roman number
 
         int count = 0;
         boolean changed;
-        
+                
         do {
             changed = false;
             
             // Allow matching adds and subtracts to cancel each other out.
             changed |= cancelCharacters();
 
-            // Look for contigiuous groups of digits that I can convert to
+            // Look for contiguous groups of digits that I can convert to
             // larger digits.
             changed |= compactAddCharacters();
             changed |= balanceAddSubtract();            
@@ -166,19 +164,13 @@ public class RomanComplexNumber {
                 }
             }
             
-            // Stop the loop when both cancelCharacters and compactCharacters
-            // fail to make any changes to the content of addList and subtractList
-
+            // This is a safety check to break a potential infinite loop.
             if( count > 500 ) {
                 throw new RuntimeException("killing infinite loop");
             }
             count++;
             
-        } while( changed == true );
-        
-//        if( ! updateCombinedValue() ) {
-//            throw new RuntimeException( "Enable to encode roman numeral" );
-//        }
+        } while( changed == true );        
     }
 
     private boolean reorderSubtracts() {
@@ -224,6 +216,9 @@ public class RomanComplexNumber {
         return ! digits.equals(oldDigits);
     }
 
+    /*
+     * Return a sublist containing just the add characters.
+     */
     private List<RomanDigit> getAddDigits() {
         ListFilter<RomanDigit> addFilter = new ListFilter<RomanDigit>();
         List<RomanDigit> addDigits = addFilter.filter(digits, new IFilterCondition<RomanDigit>(){
@@ -235,6 +230,9 @@ public class RomanComplexNumber {
         return addDigits;
     }
 
+    /*
+     * Return a sublist containing just the subtraction characters
+     */
     private void sortDigits(List<RomanDigit> theseDigits) {
 
         Collections.sort( theseDigits, new Comparator<RomanDigit>(){
