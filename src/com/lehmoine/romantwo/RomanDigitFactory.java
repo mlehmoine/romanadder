@@ -18,15 +18,18 @@ public class RomanDigitFactory {
         charToType.put('M', RomanDigitType.M);
     }
     
-    static RomanDigit newDigit( Character c, RomanDigit.OPERATION operation ) {
+    static public RomanDigit newDigit( Character c, RomanDigit.OPERATION operation ) {
         RomanDigitType type = charToType.get(c);
         RomanDigit digit = new RomanDigit(type, operation);
         
         return digit;
     }
     
-    static RomanDigitType getDigitType( Character c ) {
+    static public RomanDigitType getDigitType( Character c ) {
         RomanDigitType type = charToType.get(c);
+        if( type == null ) {
+            throw new RuntimeException( "Invalid character: " + c);
+        }
         return type;
     }
 }
