@@ -47,49 +47,6 @@ public class RomanNumber {
         parseDigits(romanNumber);
     }
     
-    private void parseDigits(String romanNumber) {
-
-        if( romanNumber.isEmpty() ) {
-            throw new RuntimeException("invalid roman number: empty string");
-        }		
-
-        digits.clear();
-        
-        char[] characters = romanNumber.toCharArray();
-        int count = characters.length;
-        int index = 0;
-
-        // Iterate through all of the characters in the string.
-        // Except the last one.  The last one is always an addition
-        // character.
-        //
-        // Figure out which ones are 'adds' and which ones are
-        // subtracts
-
-        for( index = 0; index < (count-1); index++ ) {
-            RomanDigitType thisCharType = RomanDigitFactory.getDigitType(characters[index]);
-            RomanDigitType nextCharType = RomanDigitFactory.getDigitType(characters[index+1]);
-
-            if( thisCharType.getValue() < nextCharType.getValue() ) {
-                // The number on the left is smaller than the one on the right.
-                // This indicates subtraction.
-                RomanDigit digit = thisCharType.newSubtractDigit();
-                digits.add(digit);
-            }
-            else {
-                // The number on the left is larger or equal to the digit on
-                // right.  This one indicates addition.
-                RomanDigit digit = thisCharType.newAddDigit();
-                digits.add(digit);
-            }
-        }
-
-        // The last character is always an addition character
-        RomanDigitType lastCharType = RomanDigitFactory.getDigitType(characters[index]);
-        RomanDigit lastDigit = lastCharType.newAddDigit();
-        digits.add(lastDigit);
-    }
-
     /*
      * This is just a copy constructor.  It makes this number
      * equal to the other number.
@@ -195,6 +152,53 @@ public class RomanNumber {
             return false;
         }
     }    
+
+    /*
+     * Given a roman number in string format, set this instance of RomanNumber
+     * equal to the value of the roman number.
+     */
+    private void parseDigits(String romanNumber) {
+
+        if( romanNumber.isEmpty() ) {
+            throw new RuntimeException("invalid roman number: empty string");
+        }       
+
+        digits.clear();
+        
+        char[] characters = romanNumber.toCharArray();
+        int count = characters.length;
+        int index = 0;
+
+        // Iterate through all of the characters in the string.
+        // Except the last one.  The last one is always an addition
+        // character.
+        //
+        // Figure out which ones are 'adds' and which ones are
+        // subtracts
+
+        for( index = 0; index < (count-1); index++ ) {
+            RomanDigitType thisCharType = RomanDigitFactory.getDigitType(characters[index]);
+            RomanDigitType nextCharType = RomanDigitFactory.getDigitType(characters[index+1]);
+
+            if( thisCharType.getValue() < nextCharType.getValue() ) {
+                // The number on the left is smaller than the one on the right.
+                // This indicates subtraction.
+                RomanDigit digit = thisCharType.newSubtractDigit();
+                digits.add(digit);
+            }
+            else {
+                // The number on the left is larger or equal to the digit on
+                // right.  This one indicates addition.
+                RomanDigit digit = thisCharType.newAddDigit();
+                digits.add(digit);
+            }
+        }
+
+        // The last character is always an addition character
+        RomanDigitType lastCharType = RomanDigitFactory.getDigitType(characters[index]);
+        RomanDigit lastDigit = lastCharType.newAddDigit();
+        digits.add(lastDigit);
+    }
 
     /*
      * Simplify the internal representation of this roman numeral.
