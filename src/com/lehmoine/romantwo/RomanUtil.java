@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Set;
 
+@Deprecated
 public class RomanUtil {
     // value of each digit
     static final HashMap<Character, Integer> valueMap = new HashMap<Character, Integer>();
