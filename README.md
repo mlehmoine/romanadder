@@ -12,8 +12,10 @@ There is a crude executable [Main][main] class that you can execute.  It takes t
 them together, and prints the result to stdout.
 
 If you had the intent to use this body of code as a library, consider using the class [RomanAdder][romanadder] as
-your entry point.  It has one public method, Add.  Add 
+your entry point.  It has one public method, Add.  This method takes two strings as arguments and returns the sum in 
+string format.  It will throw Runtime exceptions if you pass it invalid Roman numerals. 
 
+Enjoy.
 
 [main]: romanadder/tree/master/src/com/lehmoine/romantwo/Main.java
 [romanadder]: romanadder/tree/master/src/com/lehmoine/romantwo/RomanAdder.java
