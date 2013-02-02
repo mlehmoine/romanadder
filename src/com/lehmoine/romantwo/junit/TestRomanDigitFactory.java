@@ -40,6 +40,8 @@ public class TestRomanDigitFactory {
     @Test
     public void testThree() {
         try {
+            
+            @SuppressWarnings("unused")
             RomanDigitType t = RomanDigitFactory.getDigitType('P');
             fail( "exception was not generated");
         }

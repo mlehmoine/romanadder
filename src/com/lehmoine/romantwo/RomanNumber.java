@@ -616,7 +616,7 @@ public class RomanNumber {
 
             decomposeList.push(thisType);
             
-            if( thisType == smallestAddDigitType ) {
+            if( thisType.equals(smallestAddDigitType) ) {
                 break;
             }
         }

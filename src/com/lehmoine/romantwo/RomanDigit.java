@@ -39,11 +39,11 @@ public class RomanDigit implements IHasValue {
     }
     
     public boolean isAdd() {
-        return operation == OPERATION.ADD;
+        return operation.equals(OPERATION.ADD);
     }
     
     public boolean isSubtract() {
-        return operation == OPERATION.SUBTRACT;
+        return operation.equals(OPERATION.SUBTRACT);
     }
 
     @Override
